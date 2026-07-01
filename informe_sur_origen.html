@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Informe de Performance — Sur Origen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700;9..40,900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  :root{
+    --black:#0a0a0a;
+    --panel:#141414;
+    --paper:#f4f2ee;
+    --paper-dim:#ece9e3;
+    --ink:#161513;
+    --ink-soft:#5c5951;
+    --white:#ffffff;
+    --blue:#c7d9e6;
+    --lav:#cbcdec;
+    --grad: linear-gradient(100deg,var(--blue) 0%, var(--lav) 100%);
+    --good:#7fbf9e;
+    --good-bg:#e7f2ec;
+    --warn:#e08a5a;
+    --warn-bg:#fbe9dd;
+    --line: rgba(0,0,0,0.1);
+    --line-dark: rgba(255,255,255,0.14);
+    --radius:18px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'DM Sans',sans-serif;
+    font-weight:400;
+    line-height:1.5;
+  }
+  h1,h2,h3,.logo-word{
+    font-family:'DM Sans',sans-serif;
+    font-weight:900;
+    letter-spacing:-0.02em;
+    margin:0;
+  }
+  .logo-word{
+    font-family:'Poppins',sans-serif;
+    font-weight:800;
+    text-transform:lowercase;
+  }
+  .eyebrow{
+    font-size:11px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    font-weight:700;
+    color:var(--ink-soft);
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:0 32px;}
+  a{color:inherit;}
+
+  /* ---------- HERO ---------- */
+  .hero{
+    background:var(--black);
+    color:var(--white);
+    padding:64px 0 90px;
+    position:relative;
+    overflow:hidden;
+  }
+  .hero::after{
+    content:"";
+    position:absolute;
+    right:-120px; top:-160px;
+    width:520px; height:520px;
+    border-radius:50%;
+    background:var(--grad);
+    opacity:.9;
+    filter:blur(2px);
+  }
+  .hero .wrap{position:relative;z-index:2;}
+  .hero-top{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;flex-wrap:wrap;}
+  .badge{
+    display:flex;align-items:center;gap:10px;
+    font-size:14px;color:rgba(255,255,255,.65);
+  }
+  .badge .dot{width:8px;height:8px;border-radius:50%;background:var(--grad);}
+  .hero-title{
+    font-size:clamp(38px,6vw,64px);
+    line-height:1.02;
+    max-width:760px;
+    margin-top:28px;
+  }
+  .hero-sub{
+    margin-top:20px;
+    max-width:620px;
+    font-size:17px;
+    color:rgba(255,255,255,.72);
+  }
+  .hero-meta{
+    margin-top:44px;
+    display:flex;gap:36px;flex-wrap:wrap;
+    border-top:1px solid var(--line-dark);
+    padding-top:22px;
+  }
+  .hero-meta div span{display:block;}
+  .hero-meta .k{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.5);}
+  .hero-meta .v{font-size:15px;font-weight:700;margin-top:4px;}
+
+  /* ---------- SECTION SCAFFOLDING ---------- */
+  section{padding:64px 0;}
+  .section-head{margin-bottom:36px;max-width:680px;}
+  .section-head h2{font-size:clamp(26px,3.4vw,36px);margin-top:8px;}
+  .section-head p{color:var(--ink-soft);margin-top:12px;font-size:15.5px;}
+  .light{background:var(--paper);}
+  .dim{background:var(--paper-dim);}
+  .dark{background:var(--black);color:var(--white);}
+  .dark .section-head p{color:rgba(255,255,255,.65);}
+  .dark .eyebrow{color:rgba(255,255,255,.5);}
+
+  /* ---------- KPI CARDS ---------- */
+  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+  .kpi{
+    background:var(--white);
+    border-radius:var(--radius);
+    padding:22px 20px;
+    border:1px solid var(--line);
+  }
+  .kpi .num{font-size:30px;font-weight:900;font-family:'DM Sans',sans-serif;}
+  .kpi .lbl{font-size:12.5px;color:var(--ink-soft);margin-top:6px;}
+  .kpi .delta{
+    display:inline-block;margin-top:10px;font-size:11.5px;font-weight:700;
+    padding:3px 9px;border-radius:20px;
+  }
+  .delta.up{background:var(--good-bg);color:#3f7d5f;}
+  .delta.down{background:var(--warn-bg);color:#a55321;}
+
+  /* ---------- TWO COL ---------- */
+  .grid-2{display:grid;grid-template-columns:1.1fr .9fr;gap:20px;align-items:stretch;}
+  .card{
+    background:var(--white);
+    border-radius:var(--radius);
+    padding:26px 26px 20px;
+    border:1px solid var(--line);
+  }
+  .dark .card{background:var(--panel);border-color:var(--line-dark);}
+  .card h3{font-size:16px;margin-bottom:4px;}
+  .card .cap{font-size:12.5px;color:var(--ink-soft);margin-bottom:14px;}
+  .chart-box{position:relative;height:260px;}
+  .chart-box.tall{height:320px;}
+
+  /* growth/concern lists */
+  .stat-row{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:13px 0;border-bottom:1px solid var(--line);
+    font-size:14.5px;
+  }
+  .stat-row:last-child{border-bottom:none;}
+  .stat-row .stat-val{font-weight:800;font-size:16px;}
+
+  /* ---------- PILLS / TERM TOOLTIP ---------- */
+  .term{position:relative;white-space:nowrap;}
+  .info-btn{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:16px;height:16px;border-radius:50%;
+    background:rgba(0,0,0,.12);
+    color:inherit;font-size:10px;font-weight:800;
+    border:none;cursor:pointer;
+    margin-left:3px;vertical-align:2px;
+    font-family:'DM Sans',sans-serif;
+    line-height:1;
+  }
+  .dark .info-btn{background:rgba(255,255,255,.18);}
+  .info-btn:hover{background:var(--lav);color:#161513;}
+  #tooltip-pop{
+    position:fixed;
+    max-width:280px;
+    background:var(--ink);
+    color:#fff;
+    font-size:13px;
+    line-height:1.45;
+    padding:12px 14px;
+    border-radius:12px;
+    box-shadow:0 12px 30px rgba(0,0,0,.28);
+    z-index:999;
+    display:none;
+  }
+  #tooltip-pop .t-term{
+    display:block;font-weight:800;font-size:12px;
+    text-transform:uppercase;letter-spacing:.06em;
+    margin-bottom:5px;color:var(--lav);
+  }
+
+  /* ---------- TABLE ---------- */
+  table{width:100%;border-collapse:collapse;font-size:14px;}
+  th,td{text-align:left;padding:11px 10px;border-bottom:1px solid var(--line);}
+  th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);font-weight:700;}
+  tr:last-child td{border-bottom:none;}
+  .dark th{color:rgba(255,255,255,.5);}
+  .dark td,.dark th{border-bottom-color:var(--line-dark);}
+
+  /* ---------- REEL CARDS ---------- */
+  .reel-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;}
+  .reel{
+    background:var(--white);border:1px solid var(--line);border-radius:14px;
+    padding:16px 14px;font-size:12.5px;
+  }
+  .reel .rn{font-size:11px;color:var(--ink-soft);}
+  .reel .rv{font-size:22px;font-weight:900;margin:6px 0 4px;}
+  .reel .rt{font-weight:700;font-size:12.5px;margin-bottom:6px;}
+  .reel .rmeta{color:var(--ink-soft);font-size:11.5px;}
+  .reel.weak{border-color:var(--warn);}
+  .reel.strong{border-color:var(--good);}
+
+  /* formula comparison */
+  .formula-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  .formula-card{
+    border-radius:var(--radius);
+    padding:24px;
+    background:var(--grad);
+    color:#1a1a1a;
+  }
+  .formula-card .big{font-size:34px;font-weight:900;margin:6px 0;}
+  .formula-card .row{display:flex;justify-content:space-between;font-size:13px;padding:7px 0;border-top:1px solid rgba(0,0,0,.12);}
+  .formula-card .row:first-of-type{border-top:none;margin-top:12px;}
+
+  /* findings */
+  .find-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
+  .find{
+    background:var(--panel);border:1px solid var(--line-dark);
+    border-radius:var(--radius);padding:22px;
+  }
+  .find .fn{font-size:34px;font-weight:900;color:var(--lav);}
+  .find p{font-size:14px;color:rgba(255,255,255,.75);margin-top:8px;}
+
+  /* funnel */
+  .funnel{display:flex;flex-direction:column;gap:8px;max-width:560px;margin:0 auto;}
+  .fbar{
+    display:flex;align-items:center;gap:16px;
+  }
+  .fbar .track{flex:1;background:var(--paper-dim);border-radius:10px;height:38px;position:relative;overflow:hidden;}
+  .fbar .fill{height:100%;background:var(--grad);border-radius:10px 0 0 10px;display:flex;align-items:center;padding-left:14px;font-weight:800;font-size:13px;color:#1a1a1a;}
+  .fbar .flabel{width:150px;font-size:13px;color:var(--ink-soft);text-align:right;}
+
+  /* plan list */
+  .plan{display:flex;flex-direction:column;gap:14px;}
+  .plan-item{
+    display:grid;grid-template-columns:56px 1fr;gap:16px;
+    background:var(--white);border:1px solid var(--line);border-radius:16px;
+    padding:18px 20px;
+  }
+  .plan-item .pn{font-size:26px;font-weight:900;color:var(--ink-soft);}
+  .plan-item h4{margin:0 0 6px;font-size:15px;}
+  .plan-item p{margin:0;font-size:14px;color:var(--ink-soft);}
+  .plan-item.priority{border-color:transparent;background:var(--grad);}
+  .plan-item.priority .pn{color:rgba(0,0,0,.4);}
+  .plan-item.priority p{color:rgba(0,0,0,.7);}
+
+  .cal-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px;}
+  .cal-card{background:var(--white);border:1px solid var(--line);border-radius:14px;padding:16px 18px;font-size:13.5px;}
+  .cal-card b{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);margin-bottom:4px;}
+
+  /* investment */
+  .inv-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  .inv-card{background:var(--white);border:1px solid var(--line);border-radius:var(--radius);padding:24px;}
+  .inv-card .tag{display:inline-block;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;padding:4px 10px;border-radius:20px;background:var(--paper-dim);color:var(--ink-soft);margin-bottom:12px;}
+  .neg-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+  .neg-list span{background:var(--warn-bg);color:#a55321;font-size:12px;padding:4px 10px;border-radius:20px;}
+
+  footer{background:var(--black);color:rgba(255,255,255,.55);padding:40px 0;font-size:13px;}
+  footer .wrap{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;}
+
+  @media(max-width:860px){
+    .kpi-grid{grid-template-columns:repeat(2,1fr);}
+    .grid-2{grid-template-columns:1fr;}
+    .reel-grid{grid-template-columns:repeat(2,1fr);}
+    .formula-grid{grid-template-columns:1fr;}
+    .find-grid{grid-template-columns:1fr;}
+    .inv-grid{grid-template-columns:1fr;}
+    .cal-grid{grid-template-columns:1fr;}
+    .fbar{flex-direction:column;align-items:stretch;gap:6px;}
+    .fbar .flabel{width:auto;text-align:left;}
+  }
+</style>
+</head>
+<body>
+
+<div id="tooltip-pop"><span class="t-term"></span><span class="t-def"></span></div>
+
+<!-- ============ HERO ============ -->
+<header class="hero">
+  <div class="wrap">
+    <div class="hero-top">
+      <div class="badge"><span class="dot"></span> Preparado por <span class="logo-word">tiquitaca.</span></div>
+      <div class="badge">1 de julio, 2026</div>
+    </div>
+    <h1 class="hero-title">Sur Origen ya tiene la fórmula. Le falta el embudo.</h1>
+    <p class="hero-sub">Seis meses de trabajo 100% orgánico en Instagram y Facebook. El contenido funciona y lo prueban los datos — el problema está después del scroll.</p>
+    <div class="hero-meta">
+      <div><span class="k">Cliente</span><span class="v">Constructora Sur Origen</span></div>
+      <div><span class="k">Canales</span><span class="v">Instagram + Facebook</span></div>
+      <div><span class="k">Periodo</span><span class="v">Enero – Julio 2026</span></div>
+      <div><span class="k">Inversión en pauta</span><span class="v">$0 CLP</span></div>
+    </div>
+  </div>
+</header>
+
+<!-- ============ RESUMEN EJECUTIVO ============ -->
+<section class="light">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Resumen ejecutivo</span>
+      <h2>Cero pauta. Alcance real igual.</h2>
+      <p>Sur Origen partió desde cero en enero de 2026: sin comunidad, sin historial de anuncios. Esto es lo que construyó en seis meses solo con contenido orgánico.</p>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="num">18,5 mil</div>
+        <div class="lbl">Visualizaciones Instagram</div>
+        <span class="delta up">+16,2% vs. 2025</span>
+      </div>
+      <div class="kpi">
+        <div class="num">5,8 mil</div>
+        <div class="lbl">
+          <span class="term">Alcance<button class="info-btn" data-term="alcance">?</button></span> combinado
+        </div>
+        <span class="delta up">+134,3%</span>
+      </div>
+      <div class="kpi">
+        <div class="num">731</div>
+        <div class="lbl">
+          <span class="term">Interacciones<button class="info-btn" data-term="interacciones">?</button></span> totales
+        </div>
+        <span class="delta up">+466,7%</span>
+      </div>
+      <div class="kpi">
+        <div class="num">7</div>
+        <div class="lbl">Contactos nuevos en el año</div>
+        <span class="delta down">KPI más crítico</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ VISUALIZACIONES + LO QUE PREOCUPA ============ -->
+<section class="dim">
+  <div class="wrap">
+    <div class="grid-2">
+      <div class="card">
+        <h3>Visualizaciones por canal</h3>
+        <div class="cap">El Reel concentra el 98% de las visualizaciones. La audiencia real está en Instagram.</div>
+        <div class="chart-box"><canvas id="chartCanales"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Lo que preocupa</h3>
+        <div class="cap">El contenido llega a gente nueva, pero el embudo se corta después.</div>
+        <div class="stat-row"><span>Seguidores nuevos (6 meses)</span><span class="stat-val">94</span></div>
+        <div class="stat-row"><span>Clics en enlace al perfil</span><span class="stat-val">13</span></div>
+        <div class="stat-row"><span>Contactos nuevos en el año</span><span class="stat-val">7</span></div>
+        <div class="stat-row"><span>Mensajes respondidos</span><span class="stat-val">30,4%</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ AUDIENCIA ============ -->
+<section class="light">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Quién es el público real</span>
+      <h2>Santiago sueña con el sur. Todavía no le hablamos.</h2>
+      <p>16,9% de la audiencia vive en Santiago y quiere construir en el sur. Poder adquisitivo medio-alto, motivación emocional fuerte. Es terreno sin trabajar.</p>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <h3>Ciudad de origen</h3>
+        <div class="cap">Valdivia domina, pero Santiago es la oportunidad nueva.</div>
+        <div class="chart-box"><canvas id="chartCiudad"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Edad y género</h3>
+        <div class="cap">Público 35–44 años, prácticamente parejo entre géneros.</div>
+        <div class="chart-box"><canvas id="chartGenero"></canvas></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ RADIOGRAFIA JUNIO ============ -->
+<section class="dim">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Radiografía de junio</span>
+      <h2>5 Reels, un patrón claro.</h2>
+      <p>Junio fue el primer mes con ritmo regular después del pico de mayo. El rango de 594 a 2.204 vistas por Reel es el piso real de la cuenta sin pauta.</p>
+    </div>
+    <div class="card">
+      <div class="chart-box tall"><canvas id="chartReels"></canvas></div>
+    </div>
+    <div class="reel-grid" style="margin-top:16px;">
+      <div class="reel strong">
+        <div class="rn">Reel 1 · Bosque Alto</div>
+        <div class="rv">2.204</div>
+        <div class="rt">"Construir en el sur, exige conocer el territorio"</div>
+        <div class="rmeta">88 interacciones · 14 compartidos</div>
+      </div>
+      <div class="reel">
+        <div class="rn">Reel 2 · Bosque Bajo</div>
+        <div class="rv">1.228</div>
+        <div class="rt">"Si crees tener un terreno desafiante..."</div>
+        <div class="rmeta">64 interacciones · 18 compartidos</div>
+      </div>
+      <div class="reel weak">
+        <div class="rn">Reel 3 · Postventa</div>
+        <div class="rv">594</div>
+        <div class="rt">"Casos a prueba de Sur"</div>
+        <div class="rmeta">0 compartidos · el más débil del mes</div>
+      </div>
+      <div class="reel weak">
+        <div class="rn">Reel 4 · Postventa</div>
+        <div class="rv">735</div>
+        <div class="rt">"Entregar las llaves no es el final"</div>
+        <div class="rmeta">0 compartidos</div>
+      </div>
+      <div class="reel">
+        <div class="rn">Reel 5 · Cayumapu</div>
+        <div class="rv">1.218</div>
+        <div class="rt">"Nadie fotografía esta parte"</div>
+        <div class="rmeta">+6 seguidores nuevos, el mejor del mes</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ LA FORMULA ============ -->
+<section class="light">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Los dos Reels que explican la fórmula</span>
+      <h2>El algoritmo ya eligió. Julio es repetirla.</h2>
+      <p>Rodrigo en cuadro desde el inicio, hablando a cámara en exterior. Hook con tensión. Contenido educativo, no promocional.</p>
+    </div>
+    <div class="formula-grid">
+      <div class="formula-card">
+        <div class="eyebrow" style="color:rgba(0,0,0,.55)">19 de mayo · Runca</div>
+        <div class="big">4,2 mil vistas</div>
+        <div>"Remodelar en el sur exige técnica"</div>
+        <div class="row"><span>Compartidos</span><span><b>28</b> · el más alto del año</span></div>
+        <div class="row"><span><span class="term">Recomendaciones del algoritmo<button class="info-btn" data-term="recomendaciones">?</button></span></span><span><b>99,9%</b></span></div>
+      </div>
+      <div class="formula-card">
+        <div class="eyebrow" style="color:rgba(0,0,0,.55)">2 de junio · Bosque Alto</div>
+        <div class="big">2,2 mil vistas</div>
+        <div>"Construir en el sur, exige conocer el territorio"</div>
+        <div class="row"><span>Compartidos</span><span><b>14</b></span></div>
+        <div class="row"><span><span class="term">Recomendaciones del algoritmo<button class="info-btn" data-term="recomendaciones">?</button></span></span><span><b>93,9%</b></span></div>
+      </div>
+    </div>
+    <p style="margin-top:18px;font-size:14.5px;color:var(--ink-soft);max-width:640px;">El problema compartido: cero clics en el enlace en ambos Reels. 6,4 mil personas vieron estas dos piezas combinadas. Ninguna hizo el viaje de Instagram a la web.</p>
+  </div>
+</section>
+
+<!-- ============ HALLAZGOS ============ -->
+<section class="dark">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Tres hallazgos críticos</span>
+      <h2>El contenido no es el problema.</h2>
+    </div>
+    <div class="find-grid">
+      <div class="find">
+        <div class="fn">01</div>
+        <p>Rodrigo hablando a cámara es el formato rey. Los tres Reels con mejor performance del año comparten la misma fórmula: cara humana + territorio + conocimiento técnico.</p>
+      </div>
+      <div class="find">
+        <div class="fn">02</div>
+        <p>Los hooks con tensión ganan. Las frases incompletas o preguntas abiertas superan por lejos a los hooks descriptivos y planos.</p>
+      </div>
+      <div class="find">
+        <div class="fn">03</div>
+        <p>El cuello de botella está en la conversión. De 5.800 cuentas alcanzadas, solo 7 escribieron. Y de esas 7, solo el 30,4% recibió respuesta.</p>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:32px;">
+      <h3 style="color:#fff;">El embudo, en una imagen</h3>
+      <div class="cap" style="color:rgba(255,255,255,.6)">Del <span class="term">alcance<button class="info-btn" data-term="alcance">?</button></span> al contacto real.</div>
+      <div class="funnel" style="margin-top:20px;">
+        <div class="fbar"><div class="flabel">Cuentas alcanzadas</div><div class="track"><div class="fill" style="width:100%;">5.800</div></div></div>
+        <div class="fbar"><div class="flabel">Vieron los 2 Reels clave</div><div class="track"><div class="fill" style="width:34%;">6.400 vistas*</div></div></div>
+        <div class="fbar"><div class="flabel">Clics en el enlace</div><div class="track"><div class="fill" style="width:2%;">13</div></div></div>
+        <div class="fbar"><div class="flabel">Mensajes nuevos</div><div class="track"><div class="fill" style="width:1%;">7</div></div></div>
+        <div class="fbar"><div class="flabel">Mensajes respondidos</div><div class="track"><div class="fill" style="width:0.5%;">2</div></div></div>
+      </div>
+      <p style="font-size:11.5px;color:rgba(255,255,255,.45);margin-top:14px;">*Vistas combinadas de los 2 Reels con mayor performance del año, no cuentas únicas — se muestra a escala visual, no proporcional al alcance total.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PLAN DE ACCION ============ -->
+<section class="light">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Plan de acción — Julio</span>
+      <h2>Repetir la fórmula. Cerrar el embudo.</h2>
+    </div>
+    <div class="plan">
+      <div class="plan-item priority">
+        <div class="pn">01</div>
+        <div>
+          <h4>Mantener la frecuencia — 2 Reels por semana</h4>
+          <p>6 Reels en julio. Hook visual en los primeros 2 segundos, Rodrigo en cuadro antes del segundo 5, duración 30–55 seg, CTA hablado + en pantalla.</p>
+        </div>
+      </div>
+      <div class="plan-item">
+        <div class="pn">02</div>
+        <div>
+          <h4>Activar respuesta automática en Instagram</h4>
+          <p>Mensaje de bienvenida inmediato. Meta de julio: 80% de mensajes respondidos en menos de 1 hora.</p>
+        </div>
+      </div>
+      <div class="plan-item">
+        <div class="pn">03</div>
+        <div>
+          <h4>Trabajar el segmento Santiago</h4>
+          <p>Un Reel específico: "Cómo construir en el sur desde Santiago sin estar presente en la obra".</p>
+        </div>
+      </div>
+      <div class="plan-item">
+        <div class="pn">04</div>
+        <div>
+          <h4>Activar el primer anuncio pagado</h4>
+          <p>El Reel de Runca como creativo base. Presupuesto sugerido: $60.000–$80.000 CLP por 7 días, objetivo Reconocimiento/Alcance.</p>
+        </div>
+      </div>
+      <div class="plan-item">
+        <div class="pn">05</div>
+        <div>
+          <h4>Primer Reel de testimonio</h4>
+          <p>Usar los testimonios de clientes disponibles. Los guardados son el indicador más fuerte de intención de compra futura.</p>
+        </div>
+      </div>
+    </div>
+    <div class="cal-grid">
+      <div class="cal-card"><b>Martes</b>Reel de proceso o técnico con Rodrigo.</div>
+      <div class="cal-card"><b>Jueves</b>Reel de resultado o testimonio + historia de repost.</div>
+      <div class="cal-card" style="grid-column:1/-1;"><b>Horario óptimo</b>Martes a jueves, 18:00–20:00.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TABLA RESUMEN ============ -->
+<section class="dim">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Tabla resumen</span>
+      <h2>Indicadores clave</h2>
+    </div>
+    <div class="card">
+      <table>
+        <thead><tr><th>Indicador</th><th>Acumulado año</th><th>Junio</th><th>Tendencia</th></tr></thead>
+        <tbody>
+          <tr><td>Visualizaciones IG</td><td>16.021</td><td>~6.091</td><td>↓ vs. mayo, en normalización</td></tr>
+          <tr><td><span class="term">Alcance<button class="info-btn" data-term="alcance">?</button></span> IG</td><td>5.800</td><td>2.100</td><td>↓46,4% post pico mayo</td></tr>
+          <tr><td><span class="term">Interacciones<button class="info-btn" data-term="interacciones">?</button></span> IG</td><td>731</td><td>291</td><td>↓26,3% sin el pico de mayo</td></tr>
+          <tr><td>Seguidores totales</td><td>610</td><td>+29 netos</td><td>↓31% seguimientos nuevos</td></tr>
+          <tr><td>Mensajes nuevos</td><td>7</td><td>~2</td><td>↓63,2% año a año</td></tr>
+          <tr><td>Índice de respuesta</td><td>30,4%</td><td>25%</td><td>⚠️ Por mejorar en automatización</td></tr>
+          <tr><td>Inversión en pauta</td><td>$0</td><td>$0</td><td>Sin activar</td></tr>
+          <tr><td>Mejor Reel del año</td><td colspan="2">"Remodelar en el sur" — 4.220 vistas FB+IG</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PROPUESTA DE INVERSION ============ -->
+<section class="light">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Propuesta de inversión en pauta</span>
+      <h2>Escalonar: Meta primero, Google después.</h2>
+      <p>Vamos a invertir donde ya está la prueba de que funciona. Cuando <span class="term">Analytics<button class="info-btn" data-term="ga4">?</button></span> confirme que la web convierte, sumamos Google con presupuesto nuevo — no restado del de Meta.</p>
+    </div>
+    <div class="inv-grid">
+      <div class="inv-card">
+        <span class="tag">Mes 1 · Julio</span>
+        <h3>100% Meta Ads — $80.000 CLP</h3>
+        <p style="color:var(--ink-soft);font-size:14px;margin-top:10px;">Ya se sabe qué Reel funciona (4.220 vistas orgánicas, 99,9% <span class="term">recomendaciones del algoritmo<button class="info-btn" data-term="recomendaciones">?</button></span>), ya se sabe el <span class="term"><abbr style="text-decoration:none;">CPM</abbr><button class="info-btn" data-term="cpm">?</button></span> objetivo (&lt;$1.500 CLP) y ya se conoce la audiencia.</p>
+        <div class="stat-row"><span>Impresiones mensuales aprox.</span><span class="stat-val">53.000</span></div>
+        <div class="stat-row"><span>Multiplicador de alcance orgánico</span><span class="stat-val">3–5x</span></div>
+      </div>
+      <div class="inv-card">
+        <span class="tag">Mes 2 · Agosto</span>
+        <h3>Se suma Google Ads Búsqueda</h3>
+        <p style="color:var(--ink-soft);font-size:14px;margin-top:10px;">
+          <span class="term">Red de Búsqueda<button class="info-btn" data-term="busqueda">?</button></span> con
+          <span class="term">match de frase<button class="info-btn" data-term="match">?</button></span>, no amplia. Campaña de intención + campaña de
+          <span class="term">protección de marca<button class="info-btn" data-term="proteccion">?</button></span>.
+        </p>
+        <div class="neg-list">
+          <span>gratis</span><span>trabajo</span><span>empleo</span><span>maestro particular</span><span>materiales de construcción</span><span>ferretería</span>
+        </div>
+        <p style="font-size:12px;color:var(--ink-soft);margin-top:10px;">Palabras clave negativas obligatorias<button class="info-btn" data-term="negativas" style="margin-left:2px;">?</button></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer>
+  <div class="wrap">
+    <div class="logo-word" style="font-size:18px;color:#fff;">tiquitaca.</div>
+    <div>Informe preparado para Constructora Sur Origen — 1 de julio de 2026</div>
+  </div>
+</footer>
+
+<script>
+// ---------- GLOSSARY ----------
+const GLOSARIO = {
+  alcance: "Cantidad de cuentas únicas que vieron el contenido. No es visualizaciones — una cuenta puede ver el mismo Reel varias veces y solo cuenta una vez en alcance.",
+  interacciones: "Suma de likes, comentarios, compartidos y guardados.",
+  recomendaciones: "Fuente de distribución donde Instagram muestra el contenido a cuentas que no siguen la marca. Un Reel con alto % de recomendaciones fue clasificado como relevante para audiencias nuevas.",
+  cpm: "Costo por Mil Impresiones: cuánto cuesta que el anuncio se muestre 1.000 veces. Métrica de eficiencia, no de resultado final.",
+  ga4: "Google Analytics (GA4): herramienta que mide el comportamiento de los visitantes en el sitio web — de dónde vinieron, cuánto tiempo se quedaron, qué páginas vieron.",
+  busqueda: "Red de Búsqueda (Search): anuncios que aparecen cuando alguien escribe una palabra clave en Google. Captura intención activa — la persona ya está buscando la solución.",
+  match: "Match de frase: tipo de concordancia de palabra clave que exige que la búsqueda contenga la frase exacta o similar, dando más control del gasto que el match amplio.",
+  proteccion: "Campaña de protección de marca: campaña de bajo presupuesto que puja por el propio nombre de la marca, para que la competencia no aparezca primero cuando alguien busca ese nombre exacto.",
+  negativas: "Palabras clave negativas: términos que se excluyen para que el anuncio NO se muestre ante esas búsquedas. Evitan pagar por clics de gente que no es cliente potencial."
+};
+
+const pop = document.getElementById('tooltip-pop');
+document.querySelectorAll('.info-btn').forEach(btn=>{
+  btn.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    const key = btn.dataset.term;
+    const def = GLOSARIO[key];
+    if(!def) return;
+    const isOpen = pop.style.display === 'block' && pop.dataset.active === key;
+    if(isOpen){ pop.style.display='none'; return; }
+    pop.querySelector('.t-term').textContent = btn.parentElement.childNodes[0].textContent.trim();
+    pop.querySelector('.t-def').textContent = def;
+    pop.dataset.active = key;
+    const r = btn.getBoundingClientRect();
+    let left = r.left;
+    let top = r.bottom + 8;
+    pop.style.display='block';
+    const pw = pop.offsetWidth, ph = pop.offsetHeight;
+    if(left + pw > window.innerWidth - 16) left = window.innerWidth - pw - 16;
+    if(top + ph > window.innerHeight - 16) top = r.top - ph - 8;
+    pop.style.left = left+'px';
+    pop.style.top = top+'px';
+  });
+});
+document.addEventListener('click', ()=>{ pop.style.display='none'; });
+pop.addEventListener('click', (e)=>e.stopPropagation());
+
+// ---------- CHARTS ----------
+Chart.defaults.font.family = "'DM Sans', sans-serif";
+Chart.defaults.color = '#5c5951';
+
+new Chart(document.getElementById('chartCanales'), {
+  type:'bar',
+  data:{
+    labels:['Instagram','Facebook'],
+    datasets:[{
+      label:'Visualizaciones',
+      data:[16021,2430],
+      backgroundColor:['#c7d9e6','#cbcdec'],
+      borderRadius:10,
+      barThickness:70
+    }]
+  },
+  options:{
+    plugins:{legend:{display:false}},
+    scales:{y:{grid:{color:'rgba(0,0,0,.06)'}},x:{grid:{display:false}}}
+  }
+});
+
+new Chart(document.getElementById('chartCiudad'), {
+  type:'bar',
+  data:{
+    labels:['Valdivia','Santiago','Corral','Temuco','Pto. Montt'],
+    datasets:[{
+      data:[53.8,16.9,1.8,1.8,1.3],
+      backgroundColor:'#c7d9e6',
+      borderRadius:8
+    }]
+  },
+  options:{
+    indexAxis:'y',
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:(c)=>c.raw+'%'}}},
+    scales:{x:{grid:{color:'rgba(0,0,0,.06)'},ticks:{callback:v=>v+'%'}},y:{grid:{display:false}}}
+  }
+});
+
+new Chart(document.getElementById('chartGenero'), {
+  type:'doughnut',
+  data:{
+    labels:['Mujeres 50,4%','Hombres 49,6%'],
+    datasets:[{
+      data:[50.4,49.6],
+      backgroundColor:['#cbcdec','#c7d9e6'],
+      borderWidth:0
+    }]
+  },
+  options:{
+    cutout:'68%',
+    plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:16}}}
+  }
+});
+
+new Chart(document.getElementById('chartReels'), {
+  type:'bar',
+  data:{
+    labels:['R1 Bosque Alto\n(2 jun)','R2 Bosque Bajo\n(7 jun)','R3 Postventa\n(16 jun)','R4 Postventa\n(26 jun)','R5 Cayumapu\n(30 jun)'],
+    datasets:[{
+      label:'Visualizaciones',
+      data:[2204,1228,594,735,1218],
+      backgroundColor:(ctx)=>{
+        const v = ctx.raw;
+        if(v>=2000) return '#7fbf9e';
+        if(v<700) return '#e08a5a';
+        return '#c7d9e6';
+      },
+      borderRadius:8,
+      barThickness:56
+    }]
+  },
+  options:{
+    plugins:{legend:{display:false}},
+    scales:{y:{grid:{color:'rgba(0,0,0,.06)'}},x:{grid:{display:false},ticks:{font:{size:11}}}}
+  }
+});
+</script>
+</body>
+</html>
